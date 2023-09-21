@@ -4,48 +4,44 @@ from typing import List
 
 from singer_sdk import Tap, Stream
 from singer_sdk import typing as th  # JSON schema typing helpers
-# TODO: Import your custom stream types here:
+
+# TODO: implement grab ticket stream
 from tap_imbox.streams import (
     ImboxStream,
-    UsersStream,
-    GroupsStream,
+    ListTicketsStream,
+    # GrabTicketStream,
 )
-# TODO: Compile a list of custom stream types here
-#       OR rewrite discover_streams() below with your custom logic.
+
+# TODO: implement grab ticket stream
 STREAM_TYPES = [
-    UsersStream,
-    GroupsStream,
+    ListTicketsStream,
+    # GrabTicketStream,
 ]
 
 
 class TapImbox(Tap):
     """Imbox tap class."""
+
     name = "tap-imbox"
 
-    # TODO: Update this section with the actual config values you expect:
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "auth_token",
+            "api_key",
             th.StringType,
             required=True,
-            description="The token to authenticate against the API service"
+            description="The organization's API key",
         ),
         th.Property(
-            "project_ids",
-            th.ArrayType(th.StringType),
+            "user_id",
+            th.IntegerType,
             required=True,
-            description="Project IDs to replicate"
+            description="The organization's user ID",
         ),
         th.Property(
             "start_date",
-            th.DateTimeType,
-            description="The earliest record date to sync"
-        ),
-        th.Property(
-            "api_url",
-            th.StringType,
-            default="https://api.mysample.com",
-            description="The url for the API service"
+            th.DateType,
+            required=True,
+            description="First date to extract data from",
         ),
     ).to_dict()
 
