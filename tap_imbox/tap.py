@@ -5,17 +5,14 @@ from typing import List
 from singer_sdk import Tap, Stream
 from singer_sdk import typing as th  # JSON schema typing helpers
 
-# TODO: implement grab ticket stream
 from tap_imbox.streams import (
-    ImboxStream,
     ListTicketsStream,
-    # GrabTicketStream,
+    GrabTicketStream,
 )
 
-# TODO: implement grab ticket stream
 STREAM_TYPES = [
     ListTicketsStream,
-    # GrabTicketStream,
+    GrabTicketStream,
 ]
 
 

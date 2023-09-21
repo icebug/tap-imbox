@@ -16,12 +16,15 @@ SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 class ImboxStream(RESTStream):
     """Imbox stream class."""
 
-    api_url_base = "https://apiv2.imbox.io/message"
     records_jsonpath = "$[*]"
 
+    # The endpoint path comes before the API key and user ID
     @property
     def url_base(self) -> str:
-        return f"{self.api_url_base}/{self.path}/{self.config['api_key']}/{self.config['user_id']}"
+        url_base = "https://apiv2.imbox.io/message"
+        return (
+            f"{url_base}/{self.path}/{self.config['api_key']}/{self.config['user_id']}"
+        )
 
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
         """Parse the response and return an iterator of result rows."""
