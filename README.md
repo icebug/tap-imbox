@@ -1,6 +1,13 @@
 # tap-imbox
 
-`tap-imbox` is a Singer tap for Imbox.
+`tap-imbox` is a Singer tap for Imbox, that retriews data from the following
+endpoints:
+- `https://apiv2.imbox.io/message/listTickets`
+- `https://apiv2.imbox.io/message/grabTicket`
+
+Refer to
+[the Imbox API documentation](https://imbox.se/docs/online/integration)
+for more information.
 
 Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
@@ -14,7 +21,11 @@ pipx install tap-imbox
 
 ### Accepted Config Options
 
-- [ ] `Developer TODO:` Provide a list of config options accepted by the tap.
+The tap has the following obligatory configurations:
+- `api_key` - the API key.
+- `user_id` - the organization's user ID.
+- `start_date` - the first date to extract data from if the state is empty.
+This parameter is used for the `latestUpdatedAfter` parameter in `/listTickets`. 
 
 A full list of supported settings and capabilities for this
 tap is available by running:
@@ -29,10 +40,6 @@ This Singer tap will automatically import any environment variables within the w
 `.env` if the `--config=ENV` is provided, such that config values will be considered if a matching
 environment variable is set either in the terminal context or in the `.env` file.
 
-### Source Authentication and Authorization
-
-- [ ] `Developer TODO:` If your tap requires special access on the source system, or any special authentication requirements, provide those here.
-
 ## Usage
 
 You can easily run `tap-imbox` by itself or in a pipeline using [Meltano](https://meltano.com/).
@@ -44,10 +51,6 @@ tap-imbox --version
 tap-imbox --help
 tap-imbox --config CONFIG --discover > ./catalog.json
 ```
-
-## Developer Resources
-
-- [ ] `Developer TODO:` As a first step, scan the entire project for the text "`TODO:`" and complete any recommended steps, deleting the "TODO" references once completed.
 
 ### Initialize your Development Environment
 
