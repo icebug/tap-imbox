@@ -23,7 +23,7 @@ class ListTicketsStream(ImboxStream):
     primary_keys = ["ticketID"]
     path = "listTickets"
 
-    replication_key = "updatedDate"
+    replication_key = "latestUpdated"
     is_sorted = False
 
     def get_url_params(self, context, next_page_token):
