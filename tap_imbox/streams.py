@@ -48,9 +48,7 @@ class GrabTicketStream(ImboxStream):
     records_jsonpath = "$.json[*]"
 
     name = "grab_ticket"
-    # There are usually multipe messages in a conversation connected to a ticket.
-    # Each have their own time stamp.
-    primary_keys = ["ticketID", "date"]
+    primary_keys = ["ticketID"]
 
     replication_key = "date"
     is_sorted = False
