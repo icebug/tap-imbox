@@ -27,16 +27,7 @@ class ListTicketsStream(ImboxStream):
     is_sorted = False
 
     def get_url_params(self, context, next_page_token):
-        params = {}
-
-        starting_date = self.get_starting_timestamp(context)
-        if starting_date:
-            params["latestUpdatedAfter"] = starting_date.isoformat()
-        else:
-            params["latestUpdatedAfter"] = self.config.get("start_date")
-
-        self.logger.info("QUERY PARAMS: %s", params)
-        return params
+        return {"latestUpdatedAfter": self.get_starting_timestamp(context).isoformat()}
 
     def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
         """Return a context dictionary for child streams."""
@@ -61,12 +52,20 @@ class GrabTicketStream(ImboxStream):
         """Add the ticket ID to the endpoint URL."""
         return f"{self.url_base}/{context['ticketID']}"
 
+    def parse_response(self, response: requests.Response) -> Iterable[dict]:
+        yield from extract_jsonpath(self.records_jsonpath, response.json())
+
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
         """
         Only extract order ID from the message body and disregard the rest,
         since it contains PI. The order ID is only present in the first message
         of the ticket, and if the client has used the web form.
         """
+
+        # Do not return all rows in json - only those that are newer than the
+        # state.
+        if row["date"] <= self.get_starting_timestamp(context).isoformat():
+            return None
 
         message = row.pop("messagePlain")
         s = re.search(
