@@ -75,7 +75,7 @@ class GrabTicketStream(ImboxStream):
         # Do not return all rows in json - only those that are newer than the
         # state.
         if row["date"] <= context["latestUpdated"]:
-            return None
+            return {}
 
         row["extracted_at"] = datetime.utcnow().isoformat()
         message = row.pop("messagePlain")
