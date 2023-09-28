@@ -65,7 +65,7 @@ class GrabTicketStream(ImboxStream):
         # Do not return all rows in json - only those that are newer than the
         # state.
         if row["date"] <= self.get_starting_timestamp(context).isoformat():
-            return None
+            return {}
 
         message = row.pop("messagePlain")
         s = re.search(
