@@ -1,6 +1,7 @@
 """Stream type classes for tap-imbox."""
 import requests
 import re
+from datetime import datetime
 
 from pathlib import Path
 from typing import Optional, Iterable
@@ -31,7 +32,16 @@ class ListTicketsStream(ImboxStream):
 
     def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
         """Return a context dictionary for child streams."""
-        return {"ticketID": record["ticketID"]}
+        if not context:
+            context = {}
+        context["ticketID"] = record["ticketID"]
+        context["latestUpdated"] = record["latestUpdated"]
+        self.logger.info(context)
+        return context
+
+    def post_process(self, row: dict, context: Optional[dict]) -> Optional[dict]:
+        row["extracted_at"] = datetime.utcnow().isoformat()
+        return row
 
 
 class GrabTicketStream(ImboxStream):
@@ -45,7 +55,7 @@ class GrabTicketStream(ImboxStream):
     is_sorted = False
 
     parent_stream_type = ListTicketsStream
-    ignore_parent_replication_keys = False
+    ignore_parent_replication_key = False
     path = "grabTicket"
 
     def get_url(self, context: Optional[dict]) -> str:
@@ -55,7 +65,7 @@ class GrabTicketStream(ImboxStream):
     def parse_response(self, response: requests.Response) -> Iterable[dict]:
         yield from extract_jsonpath(self.records_jsonpath, response.json())
 
-    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+    def post_process(self, row: dict, context: Optional[dict]) -> Optional[dict]:
         """
         Only extract order ID from the message body and disregard the rest,
         since it contains PI. The order ID is only present in the first message
@@ -64,9 +74,10 @@ class GrabTicketStream(ImboxStream):
 
         # Do not return all rows in json - only those that are newer than the
         # state.
-        if row["date"] <= self.get_starting_timestamp(context).isoformat():
-            return {}
+        if row["date"] <= context["latestUpdated"]:
+            return None
 
+        row["extracted_at"] = datetime.utcnow().isoformat()
         message = row.pop("messagePlain")
         s = re.search(
             r"Hur kan vi hjälpa dig\?: [^\n$]+\nOrdernummer: ([^\n$]+)", message
