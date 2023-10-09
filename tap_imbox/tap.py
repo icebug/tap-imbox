@@ -1,19 +1,11 @@
 """Imbox tap class."""
 
-from typing import List
+from __future__ import annotations
 
-from singer_sdk import Tap, Stream
+from singer_sdk import Tap
 from singer_sdk import typing as th  # JSON schema typing helpers
 
-from tap_imbox.streams import (
-    ListTicketsStream,
-    GrabTicketStream,
-)
-
-STREAM_TYPES = [
-    ListTicketsStream,
-    GrabTicketStream,
-]
+from tap_imbox import streams
 
 
 class TapImbox(Tap):
@@ -42,6 +34,17 @@ class TapImbox(Tap):
         ),
     ).to_dict()
 
-    def discover_streams(self) -> List[Stream]:
-        """Return a list of discovered streams."""
-        return [stream_class(tap=self) for stream_class in STREAM_TYPES]
+    def discover_streams(self) -> list[streams.ImboxStream]:
+        """Return a list of discovered streams.
+
+        Returns:
+            A list of discovered streams.
+        """
+        return [
+            streams.ListTicketsStream(self),
+            streams.GrabTicketStream(self),
+        ]
+
+
+if __name__ == "__main__":
+    TapImbox.cli()

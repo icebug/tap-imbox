@@ -1,22 +1,16 @@
 """REST client handling, including ImboxStream base class."""
 
-import requests
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Dict, Optional, Union, List, Iterable
 
-from memoization import cached
-
-from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.streams import RESTStream
-
 
 SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
 
 
 class ImboxStream(RESTStream):
     """Imbox stream class."""
-
-    records_jsonpath = "$[*]"
 
     @property
     def url_base(self) -> str:
@@ -27,3 +21,5 @@ class ImboxStream(RESTStream):
         return (
             f"{url_base}/{self.path}/{self.config['api_key']}/{self.config['user_id']}"
         )
+
+    records_jsonpath = "$[*]"

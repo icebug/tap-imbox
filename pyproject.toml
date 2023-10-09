@@ -1,33 +1,50 @@
 [tool.poetry]
 name = "tap-imbox"
 version = "0.0.1"
-description = "`tap-imbox` is a Singer tap for Imbox, built with the Meltano SDK for Singer Taps."
-authors = ["Eliza Nordén"]
+description = "`tap-imbox` is a Singer tap for Imbox, built with the Meltano Singer SDK."
+readme = "README.md"
+authors = ["Eliza Nordén <eliza.norden@smartr.se>"]
 keywords = [
     "ELT",
     "Imbox",
 ]
-license = "Apache 2.0"
+license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = "<3.11,>=3.7.1"
-requests = "^2.25.1"
-singer-sdk = "^0.5.0"
+python = ">=3.7.1,<4"
+singer-sdk = { version="~=0.32.0" }
+fs-s3fs = { version = "~=1.1.1", optional = true }
+requests = "~=2.31.0"
 
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-tox = "^3.24.4"
-flake8 = "^3.9.2"
-black = "^21.9b0"
-pydocstyle = "^6.1.1"
-mypy = "^0.910"
-types-requests = "^2.26.1"
-isort = "^5.10.1"
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.4.0"
+singer-sdk = { version="~=0.32.0", extras = ["testing"] }
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3 # Vertical Hanging Indent
-src_paths = "tap_imbox"
+[tool.poetry.extras]
+s3 = ["fs-s3fs"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_unused_configs = true
+
+[tool.ruff]
+ignore = [
+    "ANN101",  # missing-type-self
+    "ANN102",  # missing-type-cls
+]
+select = ["ALL"]
+src = ["tap_imbox"]
+target-version = "py37"
+
+
+[tool.ruff.flake8-annotations]
+allow-star-arg-any = true
+
+[tool.ruff.isort]
+known-first-party = ["tap_imbox"]
+
+[tool.ruff.pydocstyle]
+convention = "google"
 
 [build-system]
 requires = ["poetry-core>=1.0.8"]
