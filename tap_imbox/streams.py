@@ -82,9 +82,9 @@ class GrabTicketStream(ImboxStream):
         context: dict | None = None,
     ) -> dict | None:
         """
-        Only extract order ID from the message body and disregard the rest,
-        since it contains PI. The order ID is only present in the first message
-        of the ticket, and if the client has used the web form.
+        Only extract order ID and other useful information from the message
+        body and disregard the rest, since it contains PI. The order ID is only present in the first message of the ticket, and if the client has used
+        the web form.
 
         Logs do not contain PI, so keep their messages.
         """
@@ -100,13 +100,30 @@ class GrabTicketStream(ImboxStream):
 
         message = row.pop("messagePlain")
         if row["messageType"] == "log":
-            row["orderNumber"] = None
             row["message"] = message
+
+        # This search only works for Swedish web form claims.
+        # Other languages and other message topics will not be parsed.
         else:
+            # Updated claims message format since ca 2023-10-03.
             s = re.search(
-                r"Hur kan vi hjälpa dig\?: [^\n$]+\nOrdernummer: ([^\n$]+)", message
+                r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nOrsak: ([^\n$]+)\nFabrikationskod: ([^\n$]+)\nOrdernummer: ([^\n$]+)",
+                message,
             )
-            row["orderNumber"] = s.group(1) if s else None
-            row["message"] = None
+            if s:
+                row["messageTopic"] = s.group(1)
+                row["product"] = s.group(2)
+                row["reason"] = s.group(3)
+                row["manufacturingCode"] = s.group(4)
+                row["orderNumber"] = s.group(5)
+
+            # Rougher search for older messages and non-claims.
+            # Ignore everything except the order number.
+            else:
+                s = re.search(
+                    r"Hur kan vi hjälpa dig\?: [^\n$]+\nOrdernummer: ([^\n$]+)",
+                    message,
+                )
+                row["orderNumber"] = s.group(1) if s else None
 
         return row

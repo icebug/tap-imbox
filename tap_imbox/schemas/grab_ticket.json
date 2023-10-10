@@ -19,6 +19,30 @@
                 "string"
             ]
         },
+        "messageTopic": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "product": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "reason": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "manufacturingCode": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
         "orderNumber": {
             "type": [
                 "null",
