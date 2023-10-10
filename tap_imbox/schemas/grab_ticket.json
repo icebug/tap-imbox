@@ -13,8 +13,17 @@
         "messageType": {
             "type": "string"
         },
+        "message": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
         "orderNumber": {
-            "type": "string"
+            "type": [
+                "null",
+                "string"
+            ]
         },
         "date": {
             "type": "string",

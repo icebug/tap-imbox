@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 import typing as t
@@ -31,15 +31,21 @@ class ListTicketsStream(ImboxStream):
         context: dict | None,
         next_page_token: Any | None,
     ) -> dict[str, Any]:
-        return {"latestUpdatedAfter": self.get_starting_timestamp(context).isoformat()}
+        # The API parameter is inclusive, so add the smallest recognized unit
+        # of time to only fetch new data.
+        return {
+            "latestUpdatedAfter": (
+                self.get_starting_timestamp(context) + timedelta(milliseconds=1)
+            ).isoformat()
+        }
 
-    def get_child_context(self, record: dict, context: dict | None) -> dict | None:
+    def get_child_context(
+        self,
+        record: dict,
+        context: dict | None,
+    ) -> dict | None:
         """Return a context dictionary for child streams."""
-        if not context:
-            context = {}
-        context["ticketID"] = record["ticketID"]
-        context["latestUpdated"] = record["latestUpdated"]
-        return context
+        return {"ticketID": record["ticketID"]}
 
     def post_process(
         self,
@@ -63,6 +69,9 @@ class GrabTicketStream(ImboxStream):
     replication_key = "date"
     is_sorted = False
 
+    # Use a single state for all ticket IDs
+    state_partitioning_keys = []
+
     def get_url(self, context: Optional[dict]) -> str:
         """Add the ticket ID to the endpoint URL."""
         return f"{self.url_base}/{context['ticketID']}"
@@ -76,19 +85,28 @@ class GrabTicketStream(ImboxStream):
         Only extract order ID from the message body and disregard the rest,
         since it contains PI. The order ID is only present in the first message
         of the ticket, and if the client has used the web form.
+
+        Logs do not contain PI, so keep their messages.
         """
 
         # Do not return all rows in json - only those that are newer than the
         # state.
-        if row["date"] <= context["latestUpdated"]:
-            return
+        state = self.get_starting_timestamp(context)
+        if state:
+            if row["date"] <= state.isoformat():
+                return
 
         row["extracted_at"] = datetime.utcnow().isoformat()
-        message = row.pop("messagePlain")
-        s = re.search(
-            r"Hur kan vi hjälpa dig\?: [^\n$]+\nOrdernummer: ([^\n$]+)", message
-        )
 
-        row["orderNumber"] = s.group(1) if s else None
+        message = row.pop("messagePlain")
+        if row["messageType"] == "log":
+            row["orderNumber"] = None
+            row["message"] = message
+        else:
+            s = re.search(
+                r"Hur kan vi hjälpa dig\?: [^\n$]+\nOrdernummer: ([^\n$]+)", message
+            )
+            row["orderNumber"] = s.group(1) if s else None
+            row["message"] = None
 
         return row
