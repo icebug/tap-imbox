@@ -102,14 +102,29 @@ class GrabTicketStream(ImboxStream):
         if row["messageType"] == "log":
             row["message"] = message
 
+        # Try different versions of the message format to be back-compatible.
         # This search only works for Swedish web form claims.
         # Other languages and other message topics will not be parsed.
         else:
-            # Updated claims message format since ca 2023-10-03.
-            s = re.search(
+            s = None
+
+            # Claims message format since ca 2023-10-11.
+            s2 = re.search(
+                r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nOrsak: ([^\n$]+)\nFactory no\. \(finns på insidan av plösen\): ([^\n$]+)\nOrdernummer: ([^\n$]+)",
+                message,
+            )
+
+            # Claims message format since ca 2023-10-03.
+            s1 = re.search(
                 r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nOrsak: ([^\n$]+)\nFabrikationskod: ([^\n$]+)\nOrdernummer: ([^\n$]+)",
                 message,
             )
+
+            if s2:
+                s = s2
+            elif s1:
+                s = s1
+
             if s:
                 row["messageTopic"] = s.group(1)
                 row["product"] = s.group(2)
