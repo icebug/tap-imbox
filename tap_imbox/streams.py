@@ -101,44 +101,52 @@ class GrabTicketStream(ImboxStream):
         message = row.pop("messagePlain")
         if row["messageType"] == "log":
             row["message"] = message
+            return row
 
         # Try different versions of the message format to be back-compatible.
         # This search only works for Swedish web form claims.
         # Other languages and other message topics will not be parsed.
+        s = None
+
+        # Claims message format since ca 2024-01-02. Don't capture Version.
+        s3 = re.search(
+            r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nVersion: (?:[^\n$]+)\nOrsak: ([^\n$]+)\nFactory no\. \(finns på insidan av plösen\): ([^\n$]+)\nOrdernummer: ([^\n$]+)",
+            message,
+        )
+
+        # Claims message format since ca 2023-10-11.
+        s2 = re.search(
+            r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nOrsak: ([^\n$]+)\nFactory no\. \(finns på insidan av plösen\): ([^\n$]+)\nOrdernummer: ([^\n$]+)",
+            message,
+        )
+
+        # Claims message format since ca 2023-10-03.
+        s1 = re.search(
+            r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nOrsak: ([^\n$]+)\nFabrikationskod: ([^\n$]+)\nOrdernummer: ([^\n$]+)",
+            message,
+        )
+
+        if s3:
+            s = s3
+        elif s2:
+            s = s2
+        elif s1:
+            s = s1
+
+        if s:
+            row["messageTopic"] = s.group(1)
+            row["product"] = s.group(2)
+            row["reason"] = s.group(3)
+            row["manufacturingCode"] = s.group(4)
+            row["orderNumber"] = s.group(5)
+
+        # Rougher search for older messages and non-claims.
+        # Ignore everything except the order number.
         else:
-            s = None
-
-            # Claims message format since ca 2023-10-11.
-            s2 = re.search(
-                r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nOrsak: ([^\n$]+)\nFactory no\. \(finns på insidan av plösen\): ([^\n$]+)\nOrdernummer: ([^\n$]+)",
+            s = re.search(
+                r"Hur kan vi hjälpa dig\?: [^\n$]+\nOrdernummer: ([^\n$]+)",
                 message,
             )
-
-            # Claims message format since ca 2023-10-03.
-            s1 = re.search(
-                r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nOrsak: ([^\n$]+)\nFabrikationskod: ([^\n$]+)\nOrdernummer: ([^\n$]+)",
-                message,
-            )
-
-            if s2:
-                s = s2
-            elif s1:
-                s = s1
-
-            if s:
-                row["messageTopic"] = s.group(1)
-                row["product"] = s.group(2)
-                row["reason"] = s.group(3)
-                row["manufacturingCode"] = s.group(4)
-                row["orderNumber"] = s.group(5)
-
-            # Rougher search for older messages and non-claims.
-            # Ignore everything except the order number.
-            else:
-                s = re.search(
-                    r"Hur kan vi hjälpa dig\?: [^\n$]+\nOrdernummer: ([^\n$]+)",
-                    message,
-                )
-                row["orderNumber"] = s.group(1) if s else None
+            row["orderNumber"] = s.group(1) if s else None
 
         return row
