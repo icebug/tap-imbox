@@ -31,6 +31,12 @@
                 "string"
             ]
         },
+        "version": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
         "reason": {
             "type": [
                 "null",

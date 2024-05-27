@@ -108,9 +108,9 @@ class GrabTicketStream(ImboxStream):
         # Other languages and other message topics will not be parsed.
         s = None
 
-        # Claims message format since ca 2024-01-02. Don't capture Version.
+        # Claims message format since ca 2024-01-02.
         s3 = re.search(
-            r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nVersion: (?:[^\n$]+)\nOrsak: ([^\n$]+)\nFactory no\. \(finns på insidan av plösen\): ([^\n$]+)\nOrdernummer: ([^\n$]+)",
+            r"Hur kan vi hjälpa dig\?: ([^\n$]+)\nProdukt: ([^\n$]+)\nVersion: ([^\n$]+)\nOrsak: ([^\n$]+)\nFactory no\. \(finns på insidan av plösen\): ([^\n$]+)\nOrdernummer: ([^\n$]+)",
             message,
         )
 
@@ -128,12 +128,14 @@ class GrabTicketStream(ImboxStream):
 
         if s3:
             s = s3
-        elif s2:
-            s = s2
-        elif s1:
-            s = s1
-
-        if s:
+            row["messageTopic"] = s.group(1)
+            row["product"] = s.group(2)
+            row["version"] = s.group(3)
+            row["reason"] = s.group(4)
+            row["manufacturingCode"] = s.group(5)
+            row["orderNumber"] = s.group(6)
+        elif s2 or s1:
+            s = s2 or s1
             row["messageTopic"] = s.group(1)
             row["product"] = s.group(2)
             row["reason"] = s.group(3)
