@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 import re
+from urllib.parse import urlparse, parse_qs
 
 import typing as t
 from pathlib import Path
@@ -26,6 +27,10 @@ class ListTicketsStream(ImboxStream):
     schema_filepath = SCHEMAS_DIR / "list_tickets.json"
     records_jsonpath = "$.json[*]"
 
+    def get_next_page_token(self, response, previous_token):
+        data = response.json()
+        return data.get("next")
+
     def get_url_params(
         self,
         context: dict | None,
@@ -33,11 +38,17 @@ class ListTicketsStream(ImboxStream):
     ) -> dict[str, Any]:
         # The API parameter is inclusive, so add the smallest recognized unit
         # of time to only fetch new data.
-        return {
+
+        params = {
             "latestUpdatedAfter": (
                 self.get_starting_timestamp(context) + timedelta(milliseconds=1)
             ).isoformat()
         }
+
+        if next_page_token:
+            params.update(parse_qs(urlparse(next_page_token).query))
+
+        return params
 
     def get_child_context(
         self,
